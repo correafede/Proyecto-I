@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca de Seguridad de Procesos — Asistente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 800px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .message.assistant .message-content {
+            background: #f0f2f5;
+            color: #333;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .citations {
+            margin-top: 8px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-left: 3px solid #667eea;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .citations strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .citation-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .citation-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .confidence {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .insufficient {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #999;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e5e5;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Asistente de Seguridad de Procesos</h1>
+            <p>Biblioteca Inteligente — Respuestas citadas y verificadas</p>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="message assistant">
+                <div class="message-content">
+                    Hola! Soy tu asistente de seguridad de procesos. Puedo responder preguntas sobre HAZOP, LOPA, MOC, procedimientos de seguridad, incidentes y normas de la industria.
+                    <div class="confidence">Haz una pregunta y te daré respuestas respaldadas por documentos verificables.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="questionInput" 
+                    placeholder="Pregunta (ej: ¿Qué es HAZOP? ¿Qué es un MOC?)" 
+                    autocomplete="off"
+                >
+                <button id="sendBtn" onclick="sendQuestion()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const questionInput = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Allow Enter key to send
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !sendBtn.disabled) {
+                sendQuestion();
+            }
+        });
+
+        async function sendQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // Add user message
+            addMessage(question, 'user');
+            questionInput.value = '';
+            sendBtn.disabled = true;
+
+            // Add loading indicator
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'message assistant';
+            loadingMsg.innerHTML = '<div class="message-content"><div class="loading"><div class="spinner"></div> Procesando...</div></div>';
+            chatArea.appendChild(loadingMsg);
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            try {
+                const response = await fetch('/asistente/preguntar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pregunta: question,
+                        umbral_relevancia: 0.2
+                    })
+                });
+
+                const data = await response.json();
+                loadingMsg.remove();
+
+                if (response.ok) {
+                    if (data.informacion_insuficiente) {
+                        addMessage(
+                            data.respuesta || 'No tengo información suficiente para responder.',
+                            'assistant',
+                            true
+                        );
+                    } else {
+                        addMessage(data.respuesta || 'Sin respuesta', 'assistant', false, data.citas || [], data.confianza || 0);
+                    }
+                } else {
+                    addMessage(`Error (${response.status}): ${data.detail || 'Error desconocido'}`, 'assistant', true);
+                }
+            } catch (error) {
+                loadingMsg.remove();
+                addMessage(`Error: ${error.message}`, 'assistant', true);
+            }
+
+            sendBtn.disabled = false;
+            questionInput.focus();
+        }
+
+        function addMessage(text, role, isError = false, citas = [], confianza = 0) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+
+            let html = `<div class="message-content${isError ? ' error-message' : ''}">`;
+            html += text;
+
+            if (!isError && citas && citas.length > 0) {
+                html += `<div class="citations">
+                    <strong>Fuentes:</strong>
+                    <div class="citation-list">
+                        ${citas.map(c => `<span class="citation-badge">${c}</span>`).join('')}
+                    </div>
+                </div>`;
+            }
+
+            if (!isError && confianza) {
+                html += `<div class="confidence">Confianza: ${(confianza * 100).toFixed(0)}%</div>`;
+            }
+
+            html += '</div>';
+            msgDiv.innerHTML = html;
+            chatArea.appendChild(msgDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>
