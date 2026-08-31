@@ -479,13 +479,26 @@ def preguntar_asistente(
     # Limitar a máximo 5 documentos para evitar exceder límite de tamaño de Groq (HTTP 413)
     query_lower = pregunta.lower()
     
-    # Primero intenta búsqueda exacta por tipo de documento (HAZOP, LOPA, MOC, etc.)
-    docs = db.query(Documento).join(TipoDocumento).filter(
-        (TipoDocumento.nombre.ilike(f"%{query_lower}%")) |
-        (Documento.titulo.ilike(f"%{query_lower}%")) |
-        (Documento.descripcion.ilike(f"%{query_lower}%")) |
-        (Documento.palabras_clave.ilike(f"%{query_lower}%"))
-    ).limit(5).all()
+    # Extraer palabras clave de la pregunta (HAZOP, LOPA, MOC, etc.)
+    keywords = ['hazop', 'lopa', 'moc', 'incidente', 'procedimiento', 'norma']
+    matching_keywords = [k for k in keywords if k in query_lower]
+    
+    # Construir filtro dinámico
+    filters = []
+    for keyword in matching_keywords:
+        filters.append(TipoDocumento.nombre.ilike(f"%{keyword}%"))
+    
+    # También buscar en descripciones y títulos
+    for keyword in matching_keywords:
+        filters.append(Documento.titulo.ilike(f"%{keyword}%"))
+        filters.append(Documento.descripcion.ilike(f"%{keyword}%"))
+    
+    # Ejecutar búsqueda
+    if filters:
+        from sqlalchemy import or_
+        docs = db.query(Documento).join(TipoDocumento).filter(or_(*filters)).limit(5).all()
+    else:
+        docs = []
     
     # Si no hay resultados específicos, retorna hasta 5 documentos aleatorios como contexto
     if not docs:
