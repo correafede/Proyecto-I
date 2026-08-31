@@ -478,6 +478,8 @@ def preguntar_asistente(
     # Buscar documentos relevantes por palabras clave en la pregunta
     # Limitar a máximo 5 documentos para evitar exceder límite de tamaño de Groq (HTTP 413)
     query_lower = pregunta.lower()
+    print(f"[DEBUG] Question: {pregunta}")
+    print(f"[DEBUG] Query lower: {query_lower}")
     
     # Mapeo de tipos de documento disponibles
     tipo_nombres = {
@@ -490,31 +492,34 @@ def preguntar_asistente(
     }
     
     # Encontrar qué tipos coinciden con la pregunta
-    docs_by_type = None
+    docs = []
     for keyword, type_name in tipo_nombres.items():
         if keyword in query_lower:
-            print(f"[DEBUG] Searching for document type: {type_name} (keyword: {keyword})")
-            docs_by_type = db.query(Documento).join(TipoDocumento).filter(
+            print(f"[DEBUG] Found keyword '{keyword}' - searching for document type: {type_name}")
+            result = db.query(Documento).join(TipoDocumento).filter(
                 TipoDocumento.nombre == type_name
             ).limit(5).all()
-            print(f"[DEBUG] Found {len(docs_by_type)} documents of type {type_name}")
+            print(f"[DEBUG] Found {len(result)} documents of type {type_name}")
+            docs = result
             break
     
-    # Si encontramos por tipo, usarlos
-    if docs_by_type and len(docs_by_type) > 0:
-        docs = docs_by_type
-    else:
-        # Si no, buscar por palabras clave en descripción y título
+    # Si no encontramos por tipo, buscar por palabras clave en descripción y título
+    if not docs:
+        print(f"[DEBUG] No documents found by type, searching by text...")
         from sqlalchemy import or_
         docs = db.query(Documento).filter(
             (Documento.titulo.ilike(f"%{query_lower}%")) |
             (Documento.descripcion.ilike(f"%{query_lower}%")) |
             (Documento.palabras_clave.ilike(f"%{query_lower}%"))
         ).limit(5).all()
+        print(f"[DEBUG] Found {len(docs)} documents by text search")
     
     # Si aún no hay resultados, retorna hasta 5 documentos aleatorios como contexto
     if not docs:
+        print(f"[DEBUG] No documents found by any method, using random sample")
         docs = db.query(Documento).limit(5).all()
+    
+    print(f"[DEBUG] Final document list has {len(docs)} documents: {[d.id_biblioteca for d in docs]}")
     
     # Verificar si los resultados cumplen el umbral de relevancia
     if not docs or len(docs) == 0:
