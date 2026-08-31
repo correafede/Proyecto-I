@@ -475,9 +475,21 @@ def preguntar_asistente(
     if not pregunta:
         raise HTTPException(status_code=400, detail="Pregunta vacía")
     
-    # Buscar documentos relevantes (búsqueda de texto simple — idealmente sería embeddings/Proyecto 2)
-    # MVP: recuperar documentos de muestra para probar calidad RAG, no calidad de recuperación
-    docs = db.query(Documento).limit(10).all()
+    # Buscar documentos relevantes por palabras clave en la pregunta
+    # Intenta coincidir con títulos, descripciones y palabras clave de documentos
+    query_lower = pregunta.lower()
+    
+    # Primero intenta búsqueda exacta por tipo de documento (HAZOP, LOPA, MOC, etc.)
+    docs = db.query(Documento).join(TipoDocumento).filter(
+        (TipoDocumento.nombre.ilike(f"%{query_lower}%")) |
+        (Documento.titulo.ilike(f"%{query_lower}%")) |
+        (Documento.descripcion.ilike(f"%{query_lower}%")) |
+        (Documento.palabras_clave.ilike(f"%{query_lower}%"))
+    ).all()
+    
+    # Si no hay resultados específicos, retorna todos los documentos como contexto
+    if not docs:
+        docs = db.query(Documento).all()
     
     # Verificar si los resultados cumplen el umbral de relevancia
     if not docs or len(docs) == 0:
