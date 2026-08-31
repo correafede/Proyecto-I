@@ -4,13 +4,14 @@
 set -e
 
 # Render provides the database URL automatically
-# But we need to wait for it to be available
 if [ -z "$DATABASE_URL" ]; then
     echo "ERROR: DATABASE_URL environment variable not set"
     exit 1
 fi
 
-echo "Database URL: ${DATABASE_URL%@*}@***" # Log without password
+# Log connection attempt (without password)
+DB_LOG=$(echo $DATABASE_URL | sed 's/:[^@]*@/:PASSWORD@/')
+echo "Database URL: $DB_LOG"
 
 # Wait for PostgreSQL with exponential backoff
 MAX_ATTEMPTS=30
@@ -18,19 +19,31 @@ ATTEMPT=1
 
 echo "Waiting for PostgreSQL..."
 while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-    if python -c "
+    if python << 'EOF' 2>/dev/null
 import os
-from sqlalchemy import create_engine
+import sys
+from sqlalchemy import text, create_engine
+
+db_url = os.getenv('DATABASE_URL')
+print(f"Testing connection to database...")
+
 try:
-    engine = create_engine(os.getenv('DATABASE_URL'), pool_pre_ping=True, pool_size=1)
+    # Remove +psycopg if present - let SQLAlchemy handle it
+    if '+psycopg' in db_url:
+        db_url_test = db_url.replace('+psycopg://', '://')
+    else:
+        db_url_test = db_url
+    
+    engine = create_engine(db_url_test, echo=False, pool_size=1, max_overflow=0)
     with engine.connect() as conn:
-        conn.execute('SELECT 1')
-    print('PostgreSQL is ready!')
-    exit(0)
+        result = conn.execute(text("SELECT 1"))
+        print("PostgreSQL is ready!")
+        sys.exit(0)
 except Exception as e:
-    print(f'Attempt {$ATTEMPT}: Connection failed - {str(e)[:50]}')
-    exit(1)
-" 2>/dev/null; then
+    print(f"Connection failed: {str(e)[:100]}")
+    sys.exit(1)
+EOF
+    then
         break
     fi
     
