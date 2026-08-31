@@ -9,12 +9,8 @@ from typing import Optional
 
 # Groq API configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-GROQ_MODEL = os.getenv("GROQ_MODEL", "mixtral-8x7b-32768")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")  # Updated to available model
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-
-# Fallback: Ollama (commented out, but available if needed)
-# OLLAMA_API = "http://host.docker.internal:11434/api/generate"
-# OLLAMA_MODEL = "llama2"
 
 def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> Optional[dict]:
     """
@@ -30,21 +26,18 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
     """
     
     # Check if API key is configured
-    if not GROQ_API_KEY or GROQ_API_KEY == "":
-        print("Error: GROQ_API_KEY no está configurada. Por favor, establece la variable de entorno.")
+    if not GROQ_API_KEY or GROQ_API_KEY.startswith("gsk_") == False:
+        print("Error: GROQ_API_KEY no está configurada correctamente. Por favor, establece la variable de entorno.")
         return {
-            "respuesta": "Error: La API key de Groq no está configurada. Por favor, configura GROQ_API_KEY en tu archivo .env",
+            "respuesta": "Error: La API key de Groq no está configurada correctamente. Por favor, configura GROQ_API_KEY en tu archivo .env",
             "citas": [],
             "informacion_insuficiente": True,
             "confianza": 0.0,
-            "error": "Missing API key"
+            "error": "Missing or invalid API key"
         }
     
     try:
         # Prepare the message
-        full_prompt = f"{system_prompt}\n\nUser Query:\n{user_prompt}"
-        
-        # Call Groq API
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
@@ -67,6 +60,8 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
             "top_p": 1.0
         }
         
+        print(f"Calling Groq API with model: {GROQ_MODEL}")
+        
         response = requests.post(
             GROQ_API_URL,
             json=payload,
@@ -74,7 +69,36 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
             timeout=30
         )
         
-        response.raise_for_status()
+        # Check for HTTP errors
+        if response.status_code != 200:
+            print(f"Groq API error: {response.status_code}")
+            print(f"Response: {response.text}")
+            
+            if response.status_code == 400:
+                return {
+                    "respuesta": "Error: Solicitud inválida a Groq. Verifica tu configuración.",
+                    "citas": [],
+                    "informacion_insuficiente": True,
+                    "confianza": 0.0,
+                    "error": f"HTTP {response.status_code}: Bad Request"
+                }
+            elif response.status_code == 401:
+                return {
+                    "respuesta": "Error: Tu API key de Groq es inválida o ha expirado.",
+                    "citas": [],
+                    "informacion_insuficiente": True,
+                    "confianza": 0.0,
+                    "error": "HTTP 401: Unauthorized"
+                }
+            else:
+                return {
+                    "respuesta": f"Error de API de Groq (HTTP {response.status_code})",
+                    "citas": [],
+                    "informacion_insuficiente": True,
+                    "confianza": 0.0,
+                    "error": f"HTTP {response.status_code}"
+                }
+        
         result = response.json()
         
         # Extract message content
@@ -82,6 +106,8 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
             result_text = result["choices"][0]["message"]["content"]
         else:
             result_text = ""
+        
+        print(f"Groq response received: {len(result_text)} characters")
         
         # Try to parse JSON from response
         try:
@@ -124,15 +150,6 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
             "confianza": 0.5
         }
         
-    except requests.exceptions.HTTPError as e:
-        print(f"Error HTTP de Groq: {e.response.status_code}")
-        return {
-            "respuesta": f"Error de API (HTTP {e.response.status_code}): No se pudo conectar a Groq.",
-            "citas": [],
-            "informacion_insuficiente": True,
-            "confianza": 0.0,
-            "error": f"HTTP {e.response.status_code}"
-        }
     except requests.exceptions.ConnectionError:
         print("Error: No se puede conectar a la API de Groq.")
         return {
@@ -180,82 +197,3 @@ def validate_citations(llm_response: dict, available_doc_ids: list[str]) -> dict
         "total_cited": len(cited_ids),
         "total_available": len(available_doc_ids)
     }
-
-
-# =============================================================================
-# OLLAMA FALLBACK (Commented out - uncomment to use local Ollama instead)
-# =============================================================================
-"""
-def call_ollama(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> Optional[dict]:
-    '''
-    Call Ollama LLM with structured JSON output (LOCAL FALLBACK).
-    
-    Args:
-        system_prompt: System instructions
-        user_prompt: User query with context
-        temperature: Lower = more deterministic (good for factual answers)
-    
-    Returns:
-        Parsed JSON response or None on error
-    '''
-    OLLAMA_API = "http://host.docker.internal:11434/api/generate"
-    OLLAMA_MODEL = "llama2"
-    
-    try:
-        full_prompt = f"{system_prompt}\\n\\nUser Query:\\n{user_prompt}"
-        
-        response = requests.post(
-            OLLAMA_API,
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": full_prompt,
-                "stream": False,
-                "temperature": temperature
-            },
-            timeout=60
-        )
-        
-        response.raise_for_status()
-        result_text = response.json()["response"]
-        
-        # Parse JSON from response
-        try:
-            start_idx = result_text.find("{")
-            end_idx = result_text.rfind("}") + 1
-            if start_idx != -1 and end_idx > start_idx:
-                json_str = result_text[start_idx:end_idx]
-                result = json.loads(json_str)
-                if "respuesta" in result:
-                    return result
-        except (json.JSONDecodeError, ValueError):
-            pass
-        
-        cleaned_text = result_text.strip()
-        if not cleaned_text or cleaned_text.lower() == "undefined" or cleaned_text == "null":
-            cleaned_text = "No se pudo generar una respuesta válida. Por favor, intenta con otra pregunta."
-        
-        return {
-            "respuesta": cleaned_text,
-            "citas": [],
-            "informacion_insuficiente": False,
-            "confianza": 0.5
-        }
-        
-    except requests.exceptions.ConnectionError:
-        return {
-            "respuesta": "Error: No se puede conectar a Ollama. ¿Está Ollama ejecutándose en tu máquina?",
-            "citas": [],
-            "informacion_insuficiente": True,
-            "confianza": 0.0,
-            "error": "Connection error"
-        }
-    except Exception as e:
-        print(f"Error calling Ollama: {e}")
-        return {
-            "respuesta": f"Error al consultar modelo: {str(e)}",
-            "citas": [],
-            "informacion_insuficiente": True,
-            "confianza": 0.0,
-            "error": str(e)
-        }
-"""
