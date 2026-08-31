@@ -14,13 +14,9 @@ COPY alembic.ini alembic/ .
 # Install Python dependencies
 RUN pip install --no-cache-dir sqlalchemy psycopg fastapi uvicorn requests pgvector numpy alembic
 
-# Wait for DB, init, and run app
-CMD ["sh", "-c", "\
-    echo 'Waiting for Postgres...'; \
-    until pg_isready -h postgres -U federico -d biblioteca_seguridad; do sleep 1; done; \
-    echo 'Initializing database...'; \
-    python init_db.py && \
-    python load_data.py && \
-    echo 'Starting FastAPI server...'; \
-    uvicorn app:app --host 0.0.0.0 --port 8000 \
-"]
+# Copy startup script
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Run startup script
+CMD ["./start.sh"]

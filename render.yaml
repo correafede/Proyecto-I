@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: biblioteca-api
+    runtime: docker
+    plan: standard
+    healthCheckPath: /health
+    
+    # Environment variables
+    envVars:
+      - key: GROQ_API_KEY
+        scope: run
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: DATABASE_URL
+        scope: run
+        sync: false
+
+  - type: pserv
+    name: biblioteca-postgres
+    runtime: docker
+    plan: standard
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+    
+    envVars:
+      - key: POSTGRES_USER
+        value: federico
+      - key: POSTGRES_PASSWORD
+        scope: run
+        sync: false
+      - key: POSTGRES_DB
+        value: biblioteca_seguridad
