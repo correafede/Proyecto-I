@@ -479,28 +479,40 @@ def preguntar_asistente(
     # Limitar a máximo 5 documentos para evitar exceder límite de tamaño de Groq (HTTP 413)
     query_lower = pregunta.lower()
     
-    # Extraer palabras clave de la pregunta (HAZOP, LOPA, MOC, etc.)
-    keywords = ['hazop', 'lopa', 'moc', 'incidente', 'procedimiento', 'norma']
-    matching_keywords = [k for k in keywords if k in query_lower]
+    # Mapeo de tipos de documento disponibles
+    tipo_nombres = {
+        'hazop': 'HAZOP',
+        'lopa': 'LOPA',
+        'moc': 'MOC',
+        'incidente': 'Informe de Incidente',
+        'procedimiento': 'Procedimiento',
+        'norma': 'Norma'
+    }
     
-    # Construir filtro dinámico
-    filters = []
-    for keyword in matching_keywords:
-        filters.append(TipoDocumento.nombre.ilike(f"%{keyword}%"))
+    # Encontrar qué tipos coinciden con la pregunta
+    docs_by_type = None
+    for keyword, type_name in tipo_nombres.items():
+        if keyword in query_lower:
+            print(f"[DEBUG] Searching for document type: {type_name} (keyword: {keyword})")
+            docs_by_type = db.query(Documento).join(TipoDocumento).filter(
+                TipoDocumento.nombre == type_name
+            ).limit(5).all()
+            print(f"[DEBUG] Found {len(docs_by_type)} documents of type {type_name}")
+            break
     
-    # También buscar en descripciones y títulos
-    for keyword in matching_keywords:
-        filters.append(Documento.titulo.ilike(f"%{keyword}%"))
-        filters.append(Documento.descripcion.ilike(f"%{keyword}%"))
-    
-    # Ejecutar búsqueda
-    if filters:
-        from sqlalchemy import or_
-        docs = db.query(Documento).join(TipoDocumento).filter(or_(*filters)).limit(5).all()
+    # Si encontramos por tipo, usarlos
+    if docs_by_type and len(docs_by_type) > 0:
+        docs = docs_by_type
     else:
-        docs = []
+        # Si no, buscar por palabras clave en descripción y título
+        from sqlalchemy import or_
+        docs = db.query(Documento).filter(
+            (Documento.titulo.ilike(f"%{query_lower}%")) |
+            (Documento.descripcion.ilike(f"%{query_lower}%")) |
+            (Documento.palabras_clave.ilike(f"%{query_lower}%"))
+        ).limit(5).all()
     
-    # Si no hay resultados específicos, retorna hasta 5 documentos aleatorios como contexto
+    # Si aún no hay resultados, retorna hasta 5 documentos aleatorios como contexto
     if not docs:
         docs = db.query(Documento).limit(5).all()
     
@@ -574,6 +586,35 @@ def serve_ui():
 def health_check():
     """Punto final de verificación de salud."""
     return {"status": "ok"}
+
+
+# ============ Debug Endpoint ============
+
+@app.get("/debug/document-types")
+def debug_document_types(db: Session = Depends(get_db)):
+    """Debug: listar tipos de documentos en DB."""
+    tipos = db.query(TipoDocumento).all()
+    return {
+        "tipos": [
+            {"id": t.id, "nombre": t.nombre, "count": db.query(Documento).filter(Documento.tipo_id == t.id).count()}
+            for t in tipos
+        ]
+    }
+
+
+@app.get("/debug/search-hazop")
+def debug_search_hazop(db: Session = Depends(get_db)):
+    """Debug: buscar documentos HAZOP."""
+    docs = db.query(Documento).join(TipoDocumento).filter(
+        TipoDocumento.nombre == 'HAZOP'
+    ).limit(5).all()
+    return {
+        "count": len(docs),
+        "docs": [
+            {"id_biblioteca": d.id_biblioteca, "titulo": d.titulo}
+            for d in docs
+        ]
+    }
 
 
 if __name__ == "__main__":
