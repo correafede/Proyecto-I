@@ -48,16 +48,30 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
             end_idx = result_text.rfind("}") + 1
             if start_idx != -1 and end_idx > start_idx:
                 json_str = result_text[start_idx:end_idx]
-                result = json.loads(json_str)
-                # Ensure all required fields exist
-                if "respuesta" in result:
-                    return result
-        except (json.JSONDecodeError, ValueError):
+                try:
+                    result = json.loads(json_str)
+                    # Ensure all required fields exist
+                    if "respuesta" in result:
+                        # Validate and normalize response structure
+                        return {
+                            "respuesta": str(result.get("respuesta", "")).strip(),
+                            "citas": result.get("citas", []) if isinstance(result.get("citas"), list) else [],
+                            "informacion_insuficiente": bool(result.get("informacion_insuficiente", False)),
+                            "confianza": float(result.get("confianza", 0.5)) if result.get("confianza") else 0.5
+                        }
+                except (json.JSONDecodeError, ValueError, TypeError):
+                    pass
+        except Exception:
             pass
         
         # If not valid JSON, create structured response from text
-        # Clean the text
+        # Clean the text - remove any JSON artifacts
         cleaned_text = result_text.strip()
+        
+        # Remove stray JSON if it leaked into the text
+        if cleaned_text.startswith("{") and cleaned_text.endswith("}"):
+            cleaned_text = cleaned_text[cleaned_text.find("}")+1:].strip()
+        
         if not cleaned_text or cleaned_text.lower() == "undefined" or cleaned_text == "null":
             cleaned_text = "No se pudo generar una respuesta válida. Por favor, intenta con otra pregunta."
         
@@ -69,8 +83,10 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.3) -> 
         }
         
     except requests.exceptions.ConnectionError:
+        # Fallback: Ollama no está disponible, retornar respuesta genérica
+        print("Advertencia: No se puede conectar a Ollama. Retornando respuesta de fallback.")
         return {
-            "respuesta": "Error: No se puede conectar a Ollama. ¿Está Ollama ejecutándose en tu máquina?",
+            "respuesta": "No tengo información suficiente en la biblioteca para responder esta pregunta. (Nota: El servidor LLM (Ollama) no está disponible en este momento.)",
             "citas": [],
             "informacion_insuficiente": True,
             "confianza": 0.0,

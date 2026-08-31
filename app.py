@@ -1,6 +1,6 @@
 """
 FastAPI application — Biblioteca de Seguridad de Procesos
-REST API for document management, search, and RBPS element classification.
+API REST para gestión de documentos, búsqueda y clasificación de elementos RBPS.
 """
 
 from fastapi import FastAPI, Depends, HTTPException, Query
@@ -17,6 +17,24 @@ from models import Documento, ElementoRBPS, TipoDocumento, DocumentoRelacionado
 from prompts import SYSTEM_PROMPT, build_user_prompt
 from llm_service import call_llm, validate_citations
 from hybrid_search import hybrid_search
+
+# ============ FastAPI Setup ============
+app = FastAPI(
+    title="Biblioteca de Seguridad de Procesos",
+    description="API Backend para gestión de documentos técnicos de seguridad de procesos. Incluye búsqueda semántica, análisis RBPS y asistente con IA.",
+    version="1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1}  # Hide response examples
+)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # ============ Pydantic Schemas ============
 
@@ -81,7 +99,7 @@ class DocumentoRelacionadoSchema(BaseModel):
 
 class PreguntaAsistenteSchema(BaseModel):
     pregunta: str
-    umbral_relevancia: float = 0.3  # Minimum score to consider a doc relevant
+    umbral_relevancia: float = 0.3  # Puntuación mínima para considerar un doc relevante
     
     class Config:
         from_attributes = True
@@ -109,7 +127,7 @@ app = FastAPI(
 
 
 def get_db():
-    """Dependency: get database session."""
+    """Dependencia: obtener sesión de base de datos."""
     db = SessionLocal()
     try:
         yield db
@@ -117,57 +135,54 @@ def get_db():
         db.close()
 
 
-# ============ RBPS Elements ============
+# ============ Elementos RBPS ============
 
-@app.get("/rbps-elementos/", response_model=list[ElementoRBPSSchema])
-def listar_elementos_rbps(
-    pilar: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    """List all RBPS elements, optionally filtered by pillar."""
+@app.get("/rbps-elementos/", response_model=list[ElementoRBPSSchema], tags=["RBPS"])
+def listar_elementos_rbps(pilar: Optional[str] = None, db: Session = Depends(get_db)):
+    """Listar todos los elementos RBPS, opcionalmente filtrados por pilar."""
     query = db.query(ElementoRBPS)
     if pilar:
         query = query.filter(ElementoRBPS.pilar.contains(pilar))
     return query.order_by(ElementoRBPS.pilar, ElementoRBPS.nombre).all()
 
 
-@app.get("/rbps-elementos/{elemento_id}", response_model=ElementoRBPSSchema)
+@app.get("/rbps-elementos/{elemento_id}", response_model=ElementoRBPSSchema, tags=["RBPS"])
 def obtener_elemento_rbps(elemento_id: int, db: Session = Depends(get_db)):
-    """Get a single RBPS element by ID."""
+    """Obtener un elemento RBPS por ID."""
     elem = db.query(ElementoRBPS).filter(ElementoRBPS.id == elemento_id).first()
     if not elem:
         raise HTTPException(status_code=404, detail="Elemento RBPS no encontrado")
     return elem
 
 
-# ============ Document Types ============
+# ============ Tipos de Documento ============
 
 @app.get("/tipos-documento/", response_model=list[TipoDocumentoSchema])
 def listar_tipos_documento(db: Session = Depends(get_db)):
-    """List all document types."""
+    """Listar todos los tipos de documento."""
     return db.query(TipoDocumento).order_by(TipoDocumento.nombre).all()
 
 
-# ============ Documents ============
+# ============ Documentos ============
 
 @app.get("/documentos/", response_model=list[DocumentoResponseSchema])
 def listar_documentos(
-    tipo: Optional[str] = Query(None, description="Filter by document type name"),
-    empresa: Optional[str] = Query(None, description="Filter by company"),
-    autor: Optional[str] = Query(None, description="Filter by author"),
-    elemento_rbps_id: Optional[int] = Query(None, description="Filter by RBPS element ID"),
+    tipo: Optional[str] = Query(None, description="Filtrar por nombre de tipo de documento"),
+    empresa: Optional[str] = Query(None, description="Filtrar por empresa"),
+    autor: Optional[str] = Query(None, description="Filtrar por autor"),
+    elemento_rbps_id: Optional[int] = Query(None, description="Filtrar por ID de elemento RBPS"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """
-    List documents with filters.
+    Listar documentos con filtros.
     
-    Query params:
-    - tipo: document type name (e.g., 'HAZOP', 'LOPA', 'Informe de Incidente')
-    - empresa: company name
-    - autor: author name
-    - elemento_rbps_id: primary RBPS element ID
+    Parámetros de consulta:
+    - tipo: nombre del tipo de documento (ej., 'HAZOP', 'LOPA', 'Informe de Incidente')
+    - empresa: nombre de la empresa
+    - autor: nombre del autor
+    - elemento_rbps_id: ID del elemento RBPS principal
     """
     query = db.query(Documento)
     
@@ -185,7 +200,7 @@ def listar_documentos(
 
 @app.get("/documentos/{id_biblioteca}", response_model=DocumentoResponseSchema)
 def obtener_documento(id_biblioteca: str, db: Session = Depends(get_db)):
-    """Get a document by library ID (e.g., 'A1', 'H1', 'L2', 'M1')."""
+    """Obtener un documento por ID de biblioteca (ej., 'A1', 'H1', 'L2', 'M1')."""
     doc = db.query(Documento).filter(Documento.id_biblioteca == id_biblioteca).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
@@ -194,18 +209,18 @@ def obtener_documento(id_biblioteca: str, db: Session = Depends(get_db)):
 
 @app.post("/documentos/", response_model=DocumentoResponseSchema)
 def crear_documento(doc_data: DocumentoCreateSchema, db: Session = Depends(get_db)):
-    """Create a new document."""
-    # Check if already exists
+    """Crear un nuevo documento."""
+    # Verificar si ya existe
     existing = db.query(Documento).filter(Documento.id_biblioteca == doc_data.id_biblioteca).first()
     if existing:
         raise HTTPException(status_code=400, detail="Documento con ese ID ya existe")
     
-    # Verify type exists
+    # Verificar que el tipo exista
     tipo = db.query(TipoDocumento).filter(TipoDocumento.id == doc_data.tipo_id).first()
     if not tipo:
         raise HTTPException(status_code=400, detail="Tipo de documento no existe")
     
-    # Verify RBPS element if provided
+    # Verificar elemento RBPS si se proporciona
     elemento = None
     if doc_data.elemento_rbps_principal_id:
         elemento = db.query(ElementoRBPS).filter(
@@ -238,12 +253,12 @@ def actualizar_documento(
     doc_data: DocumentoCreateSchema,
     db: Session = Depends(get_db)
 ):
-    """Update a document."""
+    """Actualizar un documento."""
     doc = db.query(Documento).filter(Documento.id_biblioteca == id_biblioteca).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
     
-    # Update fields
+    # Actualizar campos
     doc.titulo = doc_data.titulo
     doc.autor = doc_data.autor
     doc.empresa = doc_data.empresa
@@ -271,12 +286,12 @@ def actualizar_documento(
 
 @app.delete("/documentos/{id_biblioteca}")
 def eliminar_documento(id_biblioteca: str, db: Session = Depends(get_db)):
-    """Delete a document."""
+    """Eliminar un documento."""
     doc = db.query(Documento).filter(Documento.id_biblioteca == id_biblioteca).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
     
-    # Delete related records
+    # Eliminar registros relacionados
     db.query(DocumentoRelacionado).filter(
         (DocumentoRelacionado.documento_origen_id == doc.id) |
         (DocumentoRelacionado.documento_destino_id == doc.id)
@@ -284,24 +299,24 @@ def eliminar_documento(id_biblioteca: str, db: Session = Depends(get_db)):
     
     db.delete(doc)
     db.commit()
-    return {"deleted": id_biblioteca}
+    return {"eliminado": id_biblioteca}
 
 
-# ============ Document Relationships ============
+# ============ Relaciones de Documentos ============
 
 @app.get("/documentos/{id_biblioteca}/relacionados/", response_model=dict)
 def obtener_documentos_relacionados(id_biblioteca: str, db: Session = Depends(get_db)):
-    """Get documents related to a given document."""
+    """Obtener documentos relacionados con un documento dado."""
     doc = db.query(Documento).filter(Documento.id_biblioteca == id_biblioteca).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
     
-    # Relationships FROM this document
+    # Relaciones FROM este documento
     desde = db.query(DocumentoRelacionado).filter(
         DocumentoRelacionado.documento_origen_id == doc.id
     ).all()
     
-    # Relationships TO this document
+    # Relaciones TO este documento
     hacia = db.query(DocumentoRelacionado).filter(
         DocumentoRelacionado.documento_destino_id == doc.id
     ).all()
@@ -327,14 +342,14 @@ def obtener_documentos_relacionados(id_biblioteca: str, db: Session = Depends(ge
     }
 
 
-# ============ Search & Stats ============
+# ============ Búsqueda y Estadísticas ============
 
 @app.get("/buscar/")
 def buscar(
-    q: str = Query(..., min_length=1, description="Search term"),
+    q: str = Query(..., min_length=1, description="Término de búsqueda"),
     db: Session = Depends(get_db)
 ):
-    """Search across document titles, descriptions, and keywords."""
+    """Buscar en títulos de documentos, descripciones y palabras clave."""
     docs = db.query(Documento).filter(
         (Documento.titulo.ilike(f"%{q}%")) |
         (Documento.descripcion.ilike(f"%{q}%")) |
@@ -344,7 +359,7 @@ def buscar(
     ).all()
     
     return {
-        "query": q,
+        "consulta": q,
         "resultados": len(docs),
         "documentos": [
             {
@@ -360,7 +375,7 @@ def buscar(
 
 @app.get("/estadisticas/")
 def obtener_estadisticas(db: Session = Depends(get_db)):
-    """Get library statistics."""
+    """Obtener estadísticas de la biblioteca."""
     return {
         "total_documentos": db.query(Documento).count(),
         "total_tipos": db.query(TipoDocumento).count(),
@@ -374,18 +389,18 @@ def obtener_estadisticas(db: Session = Depends(get_db)):
             for t in db.query(TipoDocumento).all()
         ],
         "documentos_por_empresa": []
-        # Temporarily disabled due to groupby complexity with nullable fields
+        # Deshabilitado temporalmente debido a complejidad de groupby con campos nulos
     }
 
 
-# ============ Semantic Search (Proyecto 2) ============
+# ============ Búsqueda Semántica (Proyecto 2) ============
 
 class BusquedaSemanticaSchema(BaseModel):
     consulta: str
     limite: int = 10
-    umbral_vector: float = 0.2  # Minimum vector similarity
-    peso_bm25: float = 0.4  # Weight for lexical search
-    peso_vector: float = 0.6  # Weight for semantic search
+    umbral_vector: float = 0.2  # Similitud mínima de vectores
+    peso_bm25: float = 0.4  # Peso para búsqueda léxica
+    peso_vector: float = 0.6  # Peso para búsqueda semántica
 
 
 class ResultadoBusquedaSchema(BaseModel):
@@ -402,20 +417,20 @@ class ResultadoBusquedaSchema(BaseModel):
 @app.post("/buscar-semantica/", response_model=list[ResultadoBusquedaSchema])
 def buscar_semantica(busqueda: BusquedaSemanticaSchema, db: Session = Depends(get_db)):
     """
-    Hybrid semantic + lexical search (Proyecto 2).
+    Búsqueda semántica + léxica híbrida (Proyecto 2).
     
-    Combines:
-    - BM25 full-text search (lexical relevance)
-    - Vector similarity search (semantic meaning)
+    Combina:
+    - Búsqueda de texto completo BM25 (relevancia léxica)
+    - Búsqueda de similitud de vectores (significado semántico)
     
-    Returns documents ranked by combined score.
+    Retorna documentos clasificados por puntuación combinada.
     """
     consulta = busqueda.consulta.strip()
     
     if not consulta:
         raise HTTPException(status_code=400, detail="Consulta vacía")
     
-    # Perform hybrid search
+    # Realizar búsqueda híbrida
     resultados = hybrid_search(
         db,
         query=consulta,
@@ -425,7 +440,7 @@ def buscar_semantica(busqueda: BusquedaSemanticaSchema, db: Session = Depends(ge
         vector_threshold=busqueda.umbral_vector
     )
     
-    # Format results
+    # Formatear resultados
     return [
         ResultadoBusquedaSchema(
             id_biblioteca=doc.id_biblioteca,
@@ -446,9 +461,9 @@ def preguntar_asistente(
     db: Session = Depends(get_db)
 ):
     """
-    RAG endpoint: responde preguntas sobre seguridad de procesos.
+    Punto final RAG: responde preguntas sobre seguridad de procesos.
     
-    Flow:
+    Flujo:
     1. Busca documentos relevantes en la biblioteca
     2. Si hay resultados > umbral, construye contexto y consulta LLM
     3. Valida que todas las citas sean de documentos en el contexto
@@ -460,11 +475,11 @@ def preguntar_asistente(
     if not pregunta:
         raise HTTPException(status_code=400, detail="Pregunta vacía")
     
-    # Buscar documentos relevantes (simple text search — idealmente sería embeddings/Proyecto 2)
-    # MVP: retrieve sample docs for testing RAG quality, not retrieval quality
+    # Buscar documentos relevantes (búsqueda de texto simple — idealmente sería embeddings/Proyecto 2)
+    # MVP: recuperar documentos de muestra para probar calidad RAG, no calidad de recuperación
     docs = db.query(Documento).limit(10).all()
     
-    # Check if results meet relevance threshold
+    # Verificar si los resultados cumplen el umbral de relevancia
     if not docs or len(docs) == 0:
         return RespuestaAsistenteSchema(
             respuesta="No tengo información suficiente en la biblioteca para responder esta pregunta.",
@@ -475,7 +490,7 @@ def preguntar_asistente(
             validacion_citas={"is_valid": True, "invalid_citations": [], "total_cited": 0}
         )
     
-    # Format documents for LLM context
+    # Formatear documentos para contexto LLM
     docs_for_context = [
         {
             "id_biblioteca": d.id_biblioteca,
@@ -494,17 +509,17 @@ def preguntar_asistente(
     if not llm_response:
         raise HTTPException(status_code=500, detail="Error al consultar el modelo LLM")
     
-    # Validate citations
+    # Validar citas
     available_ids = [d["id_biblioteca"] for d in docs_for_context]
     validation = validate_citations(llm_response, available_ids)
     
-    # If citations are invalid, mark response as unreliable
-    if not validation["is_valid"]:
+    # Si las citas son inválidas, marcar respuesta como no confiable
+    if not validation.get("is_valid", True):
         llm_response["informacion_insuficiente"] = True
         llm_response["confianza"] = 0.0
         llm_response["respuesta"] = "La respuesta generada contiene referencias a documentos que no fueron consultados. No puedo garantizar la confiabilidad."
     
-    # Fetch full document data for response
+    # Obtener datos completos del documento para la respuesta
     source_docs = db.query(Documento).filter(
         Documento.id_biblioteca.in_(available_ids)
     ).all()
@@ -519,20 +534,20 @@ def preguntar_asistente(
     )
 
 
-# ============ Web UI ============
+# ============ Interfaz Web ============
 
 @app.get("/app")
 def serve_ui():
-    """Serve the web UI for the RAG assistant."""
+    """Servir la interfaz web para el asistente RAG."""
     ui_path = os.path.join(os.path.dirname(__file__), "ui.html")
     return FileResponse(ui_path, media_type="text/html")
 
 
-# ============ Health Check ============
+# ============ Verificación de Salud ============
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint."""
+    """Punto final de verificación de salud."""
     return {"status": "ok"}
 
 
