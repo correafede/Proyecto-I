@@ -50,22 +50,14 @@ Recuerda: responde en formato JSON válido, cita exactamente los IDs de los docu
 
 
 def format_documents_for_context(documents: list[dict]) -> str:
-    """Format retrieved documents for LLM context."""
+    """Format retrieved documents for LLM context (optimized for token limit)."""
     formatted = []
     for doc in documents:
-        # Each document clearly delimited with ID
-        doc_block = f"""
-[{doc['id_biblioteca']}]
-Título: {doc['titulo']}
-Tipo: {doc['tipo']}
-Descripción: {doc.get('descripcion', 'N/A')}
-Palabras clave: {doc.get('palabras_clave', 'N/A')}
----
-{doc.get('descripcion', 'No hay descripción disponible')}
-"""
+        # Concise format to reduce token count
+        doc_block = f"[{doc['id_biblioteca']}] {doc['titulo']} ({doc['tipo']})\n{doc.get('descripcion', 'Sin descripción')}"
         formatted.append(doc_block)
     
-    return "\n".join(formatted)
+    return "\n---\n".join(formatted)
 
 
 def build_user_prompt(question: str, documents: list[dict]) -> str:

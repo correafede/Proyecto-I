@@ -476,7 +476,7 @@ def preguntar_asistente(
         raise HTTPException(status_code=400, detail="Pregunta vacía")
     
     # Buscar documentos relevantes por palabras clave en la pregunta
-    # Intenta coincidir con títulos, descripciones y palabras clave de documentos
+    # Limitar a máximo 5 documentos para evitar exceder límite de tamaño de Groq (HTTP 413)
     query_lower = pregunta.lower()
     
     # Primero intenta búsqueda exacta por tipo de documento (HAZOP, LOPA, MOC, etc.)
@@ -485,11 +485,11 @@ def preguntar_asistente(
         (Documento.titulo.ilike(f"%{query_lower}%")) |
         (Documento.descripcion.ilike(f"%{query_lower}%")) |
         (Documento.palabras_clave.ilike(f"%{query_lower}%"))
-    ).all()
+    ).limit(5).all()
     
-    # Si no hay resultados específicos, retorna todos los documentos como contexto
+    # Si no hay resultados específicos, retorna hasta 5 documentos aleatorios como contexto
     if not docs:
-        docs = db.query(Documento).all()
+        docs = db.query(Documento).limit(5).all()
     
     # Verificar si los resultados cumplen el umbral de relevancia
     if not docs or len(docs) == 0:
