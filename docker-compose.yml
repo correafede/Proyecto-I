@@ -27,6 +27,8 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: "postgresql+psycopg://federico:proceso_seguro_2026@postgres:5432/biblioteca_seguridad"
+      GROQ_API_KEY: "${GROQ_API_KEY}"
+      GROQ_MODEL: "mixtral-8x7b-32768"
     env_file: .env
     ports:
       - "8000:8000"
