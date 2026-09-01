@@ -12,7 +12,7 @@ COPY biblioteca_data.csv .
 COPY alembic.ini alembic/ .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir sqlalchemy psycopg fastapi uvicorn requests pgvector numpy alembic
+RUN pip install --no-cache-dir sqlalchemy psycopg2-binary fastapi uvicorn requests pgvector numpy alembic
 
 # Copy startup script
 COPY start.sh .
