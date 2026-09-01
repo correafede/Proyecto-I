@@ -12,8 +12,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #0a0e27;
+            color: #fff;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -23,33 +24,46 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            height: calc(100vh - 32px);
+            max-height: 800px;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 32px);
-            max-height: 900px;
+            background: #1a1f3a;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 32px 24px;
-            border-radius: 16px 16px 0 0;
+            padding: 40px 24px;
             text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
+            font-size: 18px;
             font-weight: 600;
+            margin-bottom: 4px;
         }
 
         .header p {
-            font-size: 14px;
-            opacity: 0.95;
+            font-size: 13px;
+            color: #999;
+            line-height: 1.4;
         }
 
         .chat-area {
@@ -62,21 +76,74 @@
         }
 
         .chat-area::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         .chat-area::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
+            background: transparent;
         }
 
         .chat-area::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
         }
 
         .chat-area::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h2 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: #999;
+            max-width: 300px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .suggested-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 8px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .suggested-btn {
+            padding: 10px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #667eea;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .suggested-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.6);
         }
 
         .message {
@@ -101,81 +168,40 @@
         }
 
         .message-content {
-            max-width: 75%;
+            max-width: 70%;
             padding: 12px 16px;
             border-radius: 12px;
             line-height: 1.5;
             word-wrap: break-word;
+            font-size: 14px;
         }
 
         .message.assistant .message-content {
-            background: #f0f2f5;
-            color: #333;
-            border-left: 3px solid #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            color: #e0e0e0;
         }
 
         .message.user .message-content {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 12px 2px 12px 12px;
-        }
-
-        .welcome-message {
-            text-align: center;
-            padding: 24px;
-            color: #666;
-        }
-
-        .welcome-message h2 {
-            font-size: 18px;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .welcome-message p {
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .suggested-questions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .suggested-btn {
-            padding: 8px 12px;
-            background: #f0f2f5;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            color: #667eea;
-            transition: all 0.2s;
-        }
-
-        .suggested-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
         }
 
         .citations {
             margin-top: 12px;
-            padding: 12px;
-            background: #f9f9f9;
-            border-left: 3px solid #667eea;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 2px solid #667eea;
             border-radius: 4px;
-            font-size: 13px;
-            color: #666;
+            font-size: 12px;
+            color: #bbb;
         }
 
         .citations strong {
             display: block;
             margin-bottom: 8px;
-            color: #333;
-            font-size: 12px;
+            color: #999;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -183,42 +209,61 @@
         .citation-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
 
         .citation-badge {
-            background: #667eea;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 16px;
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 3px 8px;
+            border-radius: 12px;
             font-weight: 500;
-            font-size: 12px;
+            font-size: 11px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
         }
 
         .confidence {
-            font-size: 12px;
+            font-size: 11px;
             color: #999;
             margin-top: 8px;
         }
 
         .insufficient {
-            background: #fff3cd;
+            background: rgba(255, 193, 7, 0.1);
             border-left-color: #ffc107;
-            color: #856404;
+            color: #ffc107;
         }
 
         .error-message {
-            background: #f8d7da;
-            border-left-color: #dc3545;
-            color: #721c24;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border-left: 3px solid #dc3545;
+            background: rgba(244, 67, 54, 0.1);
+            border-left-color: #f44336;
+            color: #ff9999;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .input-area {
-            padding: 20px;
-            border-top: 1px solid #e5e5e5;
+            padding: 16px 24px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             gap: 12px;
         }
@@ -231,96 +276,77 @@
 
         input[type="text"] {
             flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e5e5e5;
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
+            color: white;
             transition: all 0.2s;
+        }
+
+        input[type="text"]::placeholder {
+            color: #666;
         }
 
         input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
 
         button {
-            padding: 12px 24px;
-            background: #667eea;
+            padding: 11px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 500;
             transition: all 0.2s;
             white-space: nowrap;
         }
 
         button:hover {
-            background: #764ba2;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         button:disabled {
-            background: #ccc;
+            background: #555;
             cursor: not-allowed;
             transform: none;
-        }
-
-        .loading {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #999;
-        }
-
-        .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #e5e5e5;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #999;
-        }
-
-        .empty-state svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+            opacity: 0.6;
         }
 
         @media (max-width: 600px) {
+            .container {
+                max-height: none;
+                border-radius: 12px;
+            }
+
             .message-content {
-                max-width: 90%;
+                max-width: 85%;
             }
 
             .header {
-                padding: 20px 16px;
+                padding: 24px 16px;
             }
 
-            .header h1 {
-                font-size: 20px;
+            .chat-area {
+                padding: 16px;
+            }
+
+            .input-area {
+                padding: 12px 16px 16px;
             }
 
             .suggested-questions {
                 grid-template-columns: 1fr;
+                max-width: 100%;
             }
         }
     </style>
@@ -328,18 +354,17 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔒 Asistente de Seguridad de Procesos</h1>
-            <p>Biblioteca Inteligente — Respuestas citadas y verificadas</p>
+            <div class="header-icon">📚</div>
+            <h1>Biblioteca de Seguridad de Procesos</h1>
+            <p>Asistente inteligente — Respuestas citadas y verificadas de documentos técnicos</p>
         </div>
 
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
-                <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
-                <h2 style="color: #333; margin-bottom: 8px;">Bienvenido a la Biblioteca</h2>
-                <p style="text-align: center; max-width: 300px;">
-                    Haz preguntas sobre HAZOP, LOPA, MOC, procedimientos de seguridad, incidentes y normas de la industria.
-                </p>
-                <div class="suggested-questions" style="margin-top: 20px;">
+                <div class="empty-state-icon">🔒</div>
+                <h2>¿En qué puedo ayudarte?</h2>
+                <p>Haz preguntas sobre HAZOP, LOPA, MOC, procedimientos de seguridad, incidentes y normas de la industria.</p>
+                <div class="suggested-questions">
                     <button class="suggested-btn" onclick="askQuestion('¿Qué es HAZOP?')">¿Qué es HAZOP?</button>
                     <button class="suggested-btn" onclick="askQuestion('¿Qué es LOPA?')">¿Qué es LOPA?</button>
                     <button class="suggested-btn" onclick="askQuestion('¿Qué es MOC?')">¿Qué es MOC?</button>
@@ -352,7 +377,7 @@
                 <input 
                     type="text" 
                     id="questionInput" 
-                    placeholder="Escribe tu pregunta aquí..." 
+                    placeholder="Escribe tu pregunta..." 
                     autocomplete="off"
                 >
                 <button id="sendBtn" onclick="sendQuestion()">Enviar</button>
@@ -381,7 +406,6 @@
             const question = questionInput.value.trim();
             if (!question) return;
 
-            // Clear empty state on first message
             if (isFirstMessage) {
                 chatArea.innerHTML = '';
                 isFirstMessage = false;
@@ -393,7 +417,7 @@
 
             const loadingMsg = document.createElement('div');
             loadingMsg.className = 'message assistant';
-            loadingMsg.innerHTML = '<div class="message-content"><div class="loading"><div class="spinner"></div> Buscando en la biblioteca...</div></div>';
+            loadingMsg.innerHTML = '<div class="message-content"><div class="loading"><div class="spinner"></div>Buscando en la biblioteca...</div></div>';
             chatArea.appendChild(loadingMsg);
             chatArea.scrollTop = chatArea.scrollHeight;
 
