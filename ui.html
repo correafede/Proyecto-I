@@ -329,16 +329,16 @@
     <div class="container">
         <div class="header">
             <div class="header-content">
-                <h1>🔍 Biblioteca de Seguridad de Procesos</h1>
-                <p>Asistente inteligente — Respuestas citadas y verificadas de documentos técnicos</p>
+                <h1>🔍 CCPS Process Safety Assistant</h1>
+                <p>Authoritative guidance on process safety frameworks, risk management, and best practices — Verified with technical citations</p>
             </div>
         </div>
 
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
                 <div class="empty-state-icon">📚</div>
-                <h2>¿En qué puedo ayudarte?</h2>
-                <p>Pregunta sobre HAZOP, LOPA, MOC, procedimientos de seguridad, incidentes, normas de la industria y más. Recibirás respuestas verificadas con citas de los documentos.</p>
+                <h2>Process Safety Expertise at Your Service</h2>
+                <p>Ask questions about CCPS frameworks, hazard analysis methods (HAZOP, LOPA, MOC), risk assessment, safety culture, incident investigation, and process safety management systems. Receive authoritative, cited responses grounded in CCPS principles and industry best practices.</p>
             </div>
         </div>
 
@@ -347,7 +347,7 @@
                 <input 
                     type="text" 
                     id="questionInput" 
-                    placeholder="Escribe tu pregunta aquí..." 
+                    placeholder="Ask about process safety, CCPS frameworks, HAZOP, LOPA, MOC..." 
                     autocomplete="off"
                 >
                 <button id="sendBtn" onclick="sendQuestion()">Enviar</button>
@@ -382,7 +382,7 @@
 
             const loadingMsg = document.createElement('div');
             loadingMsg.className = 'message assistant';
-            loadingMsg.innerHTML = '<div class="message-content"><div class="loading"><div class="spinner"></div>Buscando en la biblioteca...</div></div>';
+            loadingMsg.innerHTML = '<div class="message-content"><div class="loading"><div class="spinner"></div>Searching technical library...</div></div>';
             chatArea.appendChild(loadingMsg);
             chatArea.scrollTop = chatArea.scrollHeight;
 
