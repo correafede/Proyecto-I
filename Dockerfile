@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/ap
 # Copy application files
 COPY database.py models.py load_data.py init_db.py app.py ./
 COPY llm_service.py prompts.py embedding_service.py hybrid_search.py generate_embeddings.py ./
-COPY biblioteca_data.csv .
+COPY biblioteca_data.csv ui.html ./
 COPY alembic.ini alembic/ .
 
 # Install Python dependencies
