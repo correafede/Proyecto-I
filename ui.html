@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca de Seguridad de Procesos</title>
+    <title>CCPS Process Safety Assistant</title>
     <style>
         * {
             margin: 0;
@@ -11,55 +11,91 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1f2e;
+            --bg-tertiary: #252d3d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b8c1;
+            --text-tertiary: #7a8290;
+            --accent-primary: #2563eb;
+            --accent-secondary: #1e40af;
+            --border-color: #323d4d;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            background: #0a0e27;
-            color: #fff;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
+            padding: 20px;
         }
 
         .container {
             width: 100%;
-            max-width: 900px;
-            height: calc(100vh - 32px);
-            max-height: 800px;
+            max-width: 1000px;
+            height: calc(100vh - 40px);
+            max-height: 900px;
             display: flex;
             flex-direction: column;
-            background: #1a1f3a;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
             overflow: hidden;
         }
 
+        /* ===== HEADER ===== */
         .header {
-            padding: 32px 24px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
         }
 
         .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header-top {
             display: flex;
-            flex-direction: column;
             align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .header-logo {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .header h1 {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 4px;
+            color: var(--text-primary);
         }
 
         .header p {
             font-size: 13px;
-            color: #999;
-            line-height: 1.4;
+            color: var(--text-tertiary);
+            line-height: 1.5;
+            margin-top: 8px;
         }
 
+        /* ===== CHAT AREA ===== */
         .chat-area {
             flex: 1;
             overflow-y: auto;
@@ -67,10 +103,11 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            background: var(--bg-primary);
         }
 
         .chat-area::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
 
         .chat-area::-webkit-scrollbar-track {
@@ -78,14 +115,15 @@
         }
 
         .chat-area::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            background: var(--border-color);
+            border-radius: 4px;
         }
 
         .chat-area::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--text-tertiary);
         }
 
+        /* ===== EMPTY STATE ===== */
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -96,31 +134,42 @@
         }
 
         .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            opacity: 0.8;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            font-size: 56px;
+            margin-bottom: 24px;
+            opacity: 0.6;
         }
 
         .empty-state h2 {
             font-size: 18px;
-            margin-bottom: 12px;
             font-weight: 600;
-            color: #fff;
+            color: var(--text-primary);
+            margin-bottom: 8px;
         }
 
         .empty-state p {
-            font-size: 14px;
-            color: #999;
-            max-width: 400px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            max-width: 420px;
             line-height: 1.6;
+            margin-bottom: 24px;
         }
 
+        .example-queries {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .example-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        /* ===== MESSAGES ===== */
         .message {
             display: flex;
             gap: 12px;
@@ -143,42 +192,49 @@
         }
 
         .message-content {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
+            max-width: 65%;
+            padding: 12px 14px;
+            border-radius: 8px;
             line-height: 1.5;
             word-wrap: break-word;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .message.assistant .message-content {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            color: #e0e0e0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--accent-primary);
             color: white;
         }
 
-        .citations {
-            margin-top: 12px;
-            padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 2px solid #667eea;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #bbb;
+        .message-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            padding: 0 4px;
         }
 
-        .citations strong {
+        /* ===== CITATIONS ===== */
+        .citations {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: rgba(37, 99, 235, 0.08);
+            border-left: 2px solid var(--accent-primary);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .citations-label {
             display: block;
-            margin-bottom: 8px;
-            color: #999;
-            font-size: 11px;
+            color: var(--text-tertiary);
+            font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
+            margin-bottom: 8px;
         }
 
         .citation-list {
@@ -188,119 +244,168 @@
         }
 
         .citation-badge {
-            background: rgba(102, 126, 234, 0.2);
-            color: #667eea;
+            background: var(--accent-primary);
+            color: white;
             padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 500;
+            border-radius: 4px;
             font-size: 11px;
-            border: 1px solid rgba(102, 126, 234, 0.3);
+            font-weight: 500;
         }
 
-        .confidence {
+        .confidence-score {
             font-size: 11px;
-            color: #999;
+            color: var(--text-tertiary);
             margin-top: 8px;
         }
 
-        .insufficient {
-            background: rgba(255, 193, 7, 0.1);
-            border-left-color: #ffc107;
-            color: #ffc107;
+        .confidence-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        /* ===== STATUS MESSAGES ===== */
+        .insufficient-info {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning-color);
+            color: var(--text-primary);
         }
 
         .error-message {
-            background: rgba(244, 67, 54, 0.1);
-            border-left-color: #f44336;
-            color: #ff9999;
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--error-color);
+            color: var(--text-primary);
         }
 
         .loading {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #999;
-            font-size: 14px;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
         }
 
         .spinner {
             width: 12px;
             height: 12px;
-            border: 2px solid rgba(102, 126, 234, 0.2);
-            border-top-color: #667eea;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
             border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
+        /* ===== INPUT AREA ===== */
         .input-area {
             padding: 16px 24px 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-controls {
             display: flex;
             gap: 12px;
         }
 
-        .input-group {
-            flex: 1;
-            display: flex;
-            gap: 8px;
-        }
-
         input[type="text"] {
             flex: 1;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 11px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 13px;
             font-family: inherit;
-            color: white;
+            color: var(--text-primary);
             transition: all 0.2s;
         }
 
         input[type="text"]::placeholder {
-            color: #666;
+            color: var(--text-tertiary);
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
         }
 
         button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 16px;
+            background: var(--accent-primary);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             transition: all 0.2s;
             white-space: nowrap;
         }
 
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: var(--accent-secondary);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
         button:disabled {
-            background: #555;
+            background: var(--text-tertiary);
             cursor: not-allowed;
-            transform: none;
-            opacity: 0.6;
+            opacity: 0.5;
         }
 
+        .icon-button {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-button:hover:not(:disabled) {
+            background: var(--border-color);
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+        }
+
+        /* ===== FOOTER/DISCLAIMER ===== */
+        .footer-disclaimer {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .disclaimer-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: rgba(37, 99, 235, 0.2);
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             .container {
                 max-height: none;
-                border-radius: 12px;
+                border-radius: 0;
             }
 
             .message-content {
@@ -308,11 +413,7 @@
             }
 
             .header {
-                padding: 24px 16px;
-            }
-
-            .header h1 {
-                font-size: 16px;
+                padding: 16px;
             }
 
             .chat-area {
@@ -320,37 +421,58 @@
             }
 
             .input-area {
-                padding: 12px 16px 16px;
+                padding: 12px 16px 20px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- HEADER -->
         <div class="header">
             <div class="header-content">
-                <h1>🔍 CCPS Process Safety Assistant</h1>
-                <p>Authoritative guidance on process safety frameworks, risk management, and best practices — Verified with technical citations</p>
+                <div class="header-top">
+                    <div class="header-logo">⚙️</div>
+                    <h1>CCPS Process Safety Assistant</h1>
+                </div>
+                <p>Authoritative guidance on process safety frameworks, risk management, and best practices. All responses are grounded in CCPS principles and verified with technical citations.</p>
             </div>
         </div>
 
+        <!-- CHAT AREA -->
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
                 <div class="empty-state-icon">📚</div>
-                <h2>Process Safety Expertise at Your Service</h2>
-                <p>Ask questions about CCPS frameworks, hazard analysis methods (HAZOP, LOPA, MOC), risk assessment, safety culture, incident investigation, and process safety management systems. Receive authoritative, cited responses grounded in CCPS principles and industry best practices.</p>
+                <h2>Welcome to Process Safety Education</h2>
+                <p>Ask questions about CCPS methodologies, hazard analysis techniques (HAZOP, LOPA, MOC), risk assessment, safety culture, incident investigation, and process safety management systems.</p>
+                <div class="example-queries">
+                    <div class="example-label">Example Questions</div>
+                    <div style="color: var(--text-secondary); font-size: 12px; max-width: 400px; line-height: 1.6;">
+                        • What are the core principles of HAZOP methodology?<br>
+                        • How does LOPA differ from quantitative risk assessment?<br>
+                        • What elements should be included in a MOC procedure?
+                    </div>
+                </div>
             </div>
         </div>
 
+        <!-- INPUT AREA -->
         <div class="input-area">
-            <div class="input-group">
+            <div class="input-controls">
                 <input 
                     type="text" 
                     id="questionInput" 
-                    placeholder="Ask about process safety, CCPS frameworks, HAZOP, LOPA, MOC..." 
+                    placeholder="Ask about process safety, CCPS frameworks, HAZOP, LOPA, MOC, PSM..." 
                     autocomplete="off"
                 >
-                <button id="sendBtn" onclick="sendQuestion()">Enviar</button>
+                <div class="button-group">
+                    <button class="icon-button" title="Attach file">📎</button>
+                    <button id="sendBtn" onclick="sendQuestion()">Send</button>
+                </div>
+            </div>
+            <div class="footer-disclaimer">
+                <span class="disclaimer-icon"></span>
+                This assistant provides educational guidance based on CCPS principles. For site-specific safety decisions, consult qualified process safety professionals.
             </div>
         </div>
     </div>
@@ -402,19 +524,19 @@
                 if (response.ok) {
                     if (data.informacion_insuficiente) {
                         addMessage(
-                            data.respuesta || 'No tengo información suficiente para responder.',
+                            data.respuesta || 'Insufficient information available. Recommend consulting CCPS publications or qualified professionals.',
                             'assistant',
                             true
                         );
                     } else {
-                        addMessage(data.respuesta || 'Sin respuesta', 'assistant', false, data.citas || [], data.confianza || 0);
+                        addMessage(data.respuesta || 'Response generated', 'assistant', false, data.citas || [], data.confianza || 0);
                     }
                 } else {
-                    addMessage(`Error (${response.status}): ${data.detail || 'Error desconocido'}`, 'assistant', true);
+                    addMessage(`Error: ${data.detail || 'Unknown error'}`, 'assistant', true);
                 }
             } catch (error) {
                 loadingMsg.remove();
-                addMessage(`Error: ${error.message}`, 'assistant', true);
+                addMessage(`Connection error: ${error.message}`, 'assistant', true);
             }
 
             sendBtn.disabled = false;
@@ -425,12 +547,17 @@
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${role}`;
 
-            let html = `<div class="message-content${isError ? ' error-message' : ''}">`;
+            let contentClass = 'message-content';
+            if (isError) {
+                contentClass += ' insufficient-info';
+            }
+
+            let html = `<div class="${contentClass}">`;
             html += text;
 
             if (!isError && citas && citas.length > 0) {
                 html += `<div class="citations">
-                    <strong>Fuentes</strong>
+                    <span class="citations-label">Source Documents</span>
                     <div class="citation-list">
                         ${citas.map(c => `<span class="citation-badge">${c}</span>`).join('')}
                     </div>
@@ -438,7 +565,7 @@
             }
 
             if (!isError && confianza) {
-                html += `<div class="confidence">Confianza: ${(confianza * 100).toFixed(0)}%</div>`;
+                html += `<div class="confidence-score">Confidence: <span class="confidence-badge">${(confianza * 100).toFixed(0)}%</span></div>`;
             }
 
             html += '</div>';
@@ -447,7 +574,6 @@
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
-        // Auto-focus input on load
         window.addEventListener('load', () => {
             questionInput.focus();
         });
