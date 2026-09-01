@@ -569,6 +569,7 @@ def preguntar_asistente(
 
 # ============ Interfaz Web ============
 
+@app.get("/")
 @app.get("/app")
 def serve_ui():
     """Servir la interfaz web para el asistente RAG."""
